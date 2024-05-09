@@ -1,5 +1,6 @@
 package com.amincorporate.seu.entity;
 
+import com.amincorporate.seu.entity.wallet.WalletEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,8 +24,7 @@ public class MemberEntity {
 
     private Date seuJoinDate;
 
-    @OneToMany
-    @JoinColumn(name = "WALLET_ID")
+    @OneToMany(mappedBy = "memberEntity")
     private List<WalletEntity> walletEntity;
 
 }

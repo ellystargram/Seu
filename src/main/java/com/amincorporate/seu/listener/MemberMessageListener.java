@@ -51,7 +51,8 @@ public class MemberMessageListener extends ListenerAdapter {
         }
 
         //커맨드 구분
-        String command = messageWords[0];//타이핑 편하게 함
+        String command = messageWords[0]; // 타이핑 편하게 함
+
         //가입(스우(야) 가입)
         switch (command) {
             case "가입" -> {

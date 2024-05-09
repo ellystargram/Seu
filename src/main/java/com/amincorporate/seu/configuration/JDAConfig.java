@@ -32,7 +32,7 @@ public class JDAConfig {
                 .setActivity(Activity.playing("Developing"))
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES)
                 .addEventListeners(new MemberMessageListener(new MemberServiceImpl(memberRepository)))
-                .addEventListeners(new WalletMessageListener(new WalletServiceImpl(walletRepository)))
+                .addEventListeners(new WalletMessageListener(new WalletServiceImpl(memberRepository, walletRepository)))
                 .build();
     }
 

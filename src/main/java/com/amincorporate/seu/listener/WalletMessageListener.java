@@ -1,5 +1,7 @@
 package com.amincorporate.seu.listener;
 
+import com.amincorporate.seu.dto.CreateWalletDTO;
+import com.amincorporate.seu.entity.wallet.WalletType;
 import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
 import com.amincorporate.seu.service.MemberServiceImpl;
@@ -28,11 +30,11 @@ public class WalletMessageListener extends ListenerAdapter {
         String[] messageWords = rawMessage.split(" ");
         boolean isInServer = event.isFromGuild();//서버에서 온 메세지인가
 
-        if(isInServer){
-            if(rawMessage.startsWith("스우")){//서버에서 왔고 시작이 스우면
+        if (isInServer) {
+            if (rawMessage.startsWith("스우")) {//서버에서 왔고 시작이 스우면
                 messageWords = Arrays.copyOfRange(messageWords, 1, messageWords.length);
             }
-            else{//서버에서 왔지만 스우를 부른게 아니면
+            else {//서버에서 왔지만 스우를 부른게 아니면
                 return;
             }
         }

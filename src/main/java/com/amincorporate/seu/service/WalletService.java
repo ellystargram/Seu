@@ -1,7 +1,10 @@
 package com.amincorporate.seu.service;
 
+import com.amincorporate.seu.dto.CreateWalletDTO;
+import com.amincorporate.seu.entity.wallet.WalletType;
+
 public interface WalletService {
 
-    void createWallet(String userId, String walletName);
+    CreateWalletDTO createWallet(String memberId, WalletType walletType);
 
 }
