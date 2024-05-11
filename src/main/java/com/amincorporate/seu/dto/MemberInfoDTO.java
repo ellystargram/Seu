@@ -3,16 +3,14 @@ package com.amincorporate.seu.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Getter
 @Setter
-public class JoinDTO {
-
-    private String id;
+public class MemberInfoDTO {
 
     private String name;
 
-    private Date discordJoinDate;
+    private String discordJoinDate;
+
+    private String seuJoinDate;
 
 }

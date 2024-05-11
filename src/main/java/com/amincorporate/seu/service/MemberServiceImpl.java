@@ -1,11 +1,13 @@
 package com.amincorporate.seu.service;
 
-import com.amincorporate.seu.dto.InfoDTO;
-import com.amincorporate.seu.dto.JoinDTO;
+import com.amincorporate.seu.dto.MemberInfoDTO;
+import com.amincorporate.seu.dto.MemberJoinDTO;
 import com.amincorporate.seu.entity.MemberEntity;
 import com.amincorporate.seu.exception.MemberExistsException;
 import com.amincorporate.seu.exception.MemberNoExistsException;
 import com.amincorporate.seu.repository.MemberRepository;
+import com.amincorporate.seu.work.MemberMessageWork;
+import com.amincorporate.seu.work.WalletMessageWork;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,15 +23,15 @@ public class MemberServiceImpl implements MemberService {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy년 MM월 dd일");
 
     @Override
-    public void join(JoinDTO joinDTO) {
-        if (memberRepository.existsMemberById(joinDTO.getId())) {
+    public void join(MemberJoinDTO memberJoinDTO) {
+        if (memberRepository.existsMemberById(memberJoinDTO.getId())) {
             throw new MemberExistsException();
         }
 
         memberRepository.save(MemberEntity.builder()
-                .id(joinDTO.getId())
-                .name(joinDTO.getName())
-                .discordJoinDate(joinDTO.getDiscordJoinDate())
+                .id(memberJoinDTO.getId())
+                .name(memberJoinDTO.getName())
+                .discordJoinDate(memberJoinDTO.getDiscordJoinDate())
                 .seuJoinDate(new Date())
                 .build());
     }
@@ -44,19 +46,23 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public InfoDTO getInfo(String memberId) {
+    public MemberInfoDTO getInfo(String memberId) {
         if (!memberRepository.existsMemberById(memberId)) {
             throw new MemberNoExistsException();
         }
 
         MemberEntity memberEntity = memberRepository.findById(memberId).get();
 
-        InfoDTO infoDTO = new InfoDTO();
-        infoDTO.setName(memberEntity.getName());
-        infoDTO.setDiscordJoinDate(formatter.format(memberEntity.getDiscordJoinDate()));
-        infoDTO.setSeuJoinDate(formatter.format(memberEntity.getSeuJoinDate()));
+        MemberInfoDTO memberInfoDTO = new MemberInfoDTO();
+        memberInfoDTO.setName(memberEntity.getName());
+        memberInfoDTO.setDiscordJoinDate(formatter.format(memberEntity.getDiscordJoinDate()));
+        memberInfoDTO.setSeuJoinDate(formatter.format(memberEntity.getSeuJoinDate()));
 
-        return infoDTO;
+        return memberInfoDTO;
     }
 
+    @Override
+    public Boolean isMemberExists(String memberId) {
+        return memberRepository.existsMemberById(memberId);
+    }
 }

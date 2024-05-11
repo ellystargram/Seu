@@ -7,12 +7,12 @@ import java.util.Date;
 
 @Getter
 @Setter
-public class InfoDTO {
+public class MemberJoinDTO {
+
+    private String id;
 
     private String name;
 
-    private String discordJoinDate;
-
-    private String seuJoinDate;
+    private Date discordJoinDate;
 
 }

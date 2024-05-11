@@ -24,7 +24,7 @@ public class MemberEntity {
 
     private Date seuJoinDate;
 
-    @OneToMany(mappedBy = "memberEntity")
+    @OneToMany(mappedBy = "memberEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WalletEntity> walletEntity;
 
 }

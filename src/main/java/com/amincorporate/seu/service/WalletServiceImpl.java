@@ -1,16 +1,22 @@
 package com.amincorporate.seu.service;
 
-import com.amincorporate.seu.dto.CreateWalletDTO;
+import com.amincorporate.seu.dto.WalletCreateDTO;
+import com.amincorporate.seu.dto.WalletInfoDTO;
 import com.amincorporate.seu.entity.wallet.WalletEntity;
 import com.amincorporate.seu.entity.wallet.WalletType;
 import com.amincorporate.seu.exception.MemberNoExistsException;
+import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.repository.MemberRepository;
 import com.amincorporate.seu.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
@@ -19,7 +25,8 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
 
     @Override
-    public CreateWalletDTO createWallet(String memberId, WalletType walletType) {
+    public WalletCreateDTO create(String memberId, WalletType walletType) {
+
         if (!memberRepository.existsMemberById(memberId)) {
             throw new MemberNoExistsException();
         }
@@ -32,11 +39,35 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepository.save(walletEntity);
 
-        CreateWalletDTO createWalletDTO = new CreateWalletDTO();
-        createWalletDTO.setWalletId(walletEntity.getId());
-        createWalletDTO.setWalletType(walletEntity.getWalletType());
+        WalletCreateDTO walletCreateDTO = new WalletCreateDTO();
+        walletCreateDTO.setWalletId(walletEntity.getId());
+        walletCreateDTO.setWalletType(walletEntity.getWalletType());
 
-        return createWalletDTO;
+        return walletCreateDTO;
+    }
+
+    @Override
+    public List<WalletInfoDTO> getInfo(String memberId) {
+        List<WalletEntity> walletEntities = walletRepository.findAllByMemberEntity_Id(memberId);
+
+        if (!memberRepository.existsMemberById(memberId)) {
+            throw new MemberNoExistsException();
+        }
+
+        if (walletEntities.isEmpty()) {
+            throw new WalletNoExistsException();
+        }
+
+        List<WalletInfoDTO> walletInfoDTOs = new ArrayList<>();
+
+        for (WalletEntity walletEntity : walletEntities) {
+            WalletInfoDTO walletInfoDTO = new WalletInfoDTO();
+            walletInfoDTO.setId(walletEntity.getId());
+            walletInfoDTO.setWalletType(walletEntity.getWalletType());
+            walletInfoDTOs.add(walletInfoDTO);
+        }
+
+        return walletInfoDTOs;
     }
 
 }
