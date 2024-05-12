@@ -3,6 +3,7 @@ package com.amincorporate.seu.listener;
 import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
 import com.amincorporate.seu.work.MemberMessageWork;
+import com.amincorporate.seu.work.TradeMessageWork;
 import com.amincorporate.seu.work.WalletMessageWork;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -16,11 +17,9 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class MemberMessageListener extends ListenerAdapter {
 
-    //todo 나중에 삭제
-    private final MemberService memberService;
-
     private final MemberMessageWork memberMessageWork;
     private final WalletMessageWork walletMessageWork;
+    private final TradeMessageWork tradeMessageWork;
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -67,6 +66,8 @@ public class MemberMessageListener extends ListenerAdapter {
                 isAnotherCommand = false;
             } else if (walletMessageWork.isWalletMessageCommand(command)) {
                 isAnotherCommand = false;
+            } else if (tradeMessageWork.isCoinTradeCommand(command)) {
+                isAnotherCommand = false;
             }
             if (isAnotherCommand) {
                 sendErrorMessage("그게 뭐누",
@@ -76,8 +77,7 @@ public class MemberMessageListener extends ListenerAdapter {
         }
 
     }
-
-
+    //this thing too
     private void sendErrorMessage(String title, String description, MessageReceivedEvent event) {
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
                 .setTitle(":frowning: **" + title + "**")
@@ -85,15 +85,6 @@ public class MemberMessageListener extends ListenerAdapter {
                 .setDescription(description)
                 .build()).queue();
     }
-//    private void sendWarningMessage(String title, String description, MessageReceivedEvent event){
-//        event.getChannel().sendMessageEmbeds(new EmbedBuilder()
-//                .setTitle(":frowning: "+title)
-//                .setColor(NoticePallet.warningYellow)
-//                .setDescription(description)
-//                .build()).queue(message -> {
-//                    message.addReaction()
-//        });
-//    }
 
 }
 

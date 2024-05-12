@@ -1,14 +1,11 @@
 package com.amincorporate.seu.configuration;
 
 import com.amincorporate.seu.listener.MemberMessageListener;
+import com.amincorporate.seu.listener.TradeMessageListener;
 import com.amincorporate.seu.listener.WalletMessageListener;
-import com.amincorporate.seu.repository.MemberRepository;
-import com.amincorporate.seu.repository.WalletRepository;
-import com.amincorporate.seu.service.MemberService;
-import com.amincorporate.seu.service.MemberServiceImpl;
-import com.amincorporate.seu.service.WalletServiceImpl;
 import com.amincorporate.seu.work.MemberMessageWork;
 import com.amincorporate.seu.work.WalletMessageWork;
+import com.amincorporate.seu.work.TradeMessageWork;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -22,11 +19,9 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class JDAConfig {
 
-    private final MemberRepository memberRepository;
-    private final WalletRepository walletRepository;
-
     private final MemberMessageWork memberMessageWork;
     private final WalletMessageWork walletMessageWork;
+    private final TradeMessageWork tradeMessageWork;
 
     @Value("${discord.bot.token}")
     private String token;
@@ -38,8 +33,9 @@ public class JDAConfig {
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES)
                 .build();
 
-        jda.addEventListener(new MemberMessageListener(new MemberServiceImpl(memberRepository), memberMessageWork, walletMessageWork));
+        jda.addEventListener(new MemberMessageListener(memberMessageWork, walletMessageWork, tradeMessageWork));
         jda.addEventListener(new WalletMessageListener(walletMessageWork, jda));
+        jda.addEventListener(new TradeMessageListener(tradeMessageWork));
 
         return jda;
     }

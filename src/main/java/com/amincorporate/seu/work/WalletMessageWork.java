@@ -207,14 +207,12 @@ public class WalletMessageWork {
                 .build()).queue();
     }
 
-    private String sendErrorMessage(String title, String description, MessageReceivedEvent event) {
-        final String[] messageID = new String[1];
+    private void sendErrorMessage(String title, String description, MessageReceivedEvent event) {
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
                 .setTitle(":frowning: **" + title + "**")
                 .setColor(NoticePallet.badRed)
                 .setDescription(description)
-                .build()).queue(message -> messageID[0] = message.getId());
-        return messageID[0];
+                .build()).queue();
     }
 
     private void sendWarningMessage(String title, String description, MessageReceivedEvent event) {

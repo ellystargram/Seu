@@ -46,18 +46,21 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepository.save(walletEntity);
 
-        // Bitcoin 정보 불러오기
-        CoinEntity coinEntity = coinRepository.findById("BTC").get();
+        log.info("월렛 개수: " + String.valueOf(walletRepository.findAllByMemberEntity_Id(memberId).size()));
 
-        // 초기 자금 1.0 BTC 지급
-        exchangeRepository.save(ExchangeEntity.builder()
-                .walletEntity(walletEntity)
-                .coinEntity(coinEntity)
-                .price(coinEntity.getPrice())
-                .quantity(1.0)
-                .tradeType("INITIAL")
-                .tradeDate(new Date())
-                .build());
+        if (walletRepository.findAllByMemberEntity_Id(memberId).size() == 1) {
+            CoinEntity coinEntity = coinRepository.findById("BTC").get();
+
+            // 초기 자금 1.0 BTC 지급
+            exchangeRepository.save(ExchangeEntity.builder()
+                    .walletEntity(walletEntity)
+                    .coinEntity(coinEntity)
+                    .price(coinEntity.getPrice())
+                    .quantity(1.0)
+                    .tradeType("INITIAL")
+                    .tradeDate(new Date())
+                    .build());
+        }
 
         WalletCreateDTO walletCreateDTO = new WalletCreateDTO();
         walletCreateDTO.setWalletId(walletEntity.getId());
@@ -99,6 +102,20 @@ public class WalletServiceImpl implements WalletService {
             throw new WalletNoExistsException();
         }
 
+        Double rate = 1.0;
+
+        switch (walletEntity.getWalletType()) {
+            case COPPER -> {
+                rate = 1.0;
+            }
+            case BAUXITE -> {
+                rate = 2.0;
+            }
+            case URANIUM -> {
+                rate = 3.0;
+            }
+        }
+
         List<ExchangeEntity> exchangeEntities = exchangeRepository.findLatestTradesByCoin();
 
         List<ExchangeInfoDTO> exchangeInfoDTOS = new ArrayList<>();
@@ -107,7 +124,7 @@ public class WalletServiceImpl implements WalletService {
             ExchangeInfoDTO exchangeInfoDTO = new ExchangeInfoDTO();
             exchangeInfoDTO.setName(exchangeEntity.getCoinEntity().getName());
             exchangeInfoDTO.setSymbol(exchangeEntity.getCoinEntity().getSymbol());
-            exchangeInfoDTO.setPrice(exchangeEntity.getPrice());
+            exchangeInfoDTO.setPrice(exchangeEntity.getPrice() * rate);
             exchangeInfoDTO.setQuantity(exchangeEntity.getQuantity());
             exchangeInfoDTOS.add(exchangeInfoDTO);
         }
