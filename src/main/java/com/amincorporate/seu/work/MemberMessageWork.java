@@ -8,7 +8,14 @@ import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
@@ -21,36 +28,48 @@ public class MemberMessageWork {
     private final MemberService memberService;
 
     private static String[] joinCommands = {"join", "가입"};
-    private static String[] leaveCommands = {"leave","탈퇴"};
+    private static String[] leaveCommands = {"leave", "탈퇴"};
     private static String[] getInfoCommands = {"get info", "내정보"};
 
-    public boolean isMemberMessageCommand(String command){
-        for(String joinCommand : joinCommands){
-            if(command.equals(joinCommand)){
-                return true;
-            }
-        }
-        for(String leaveCommand : leaveCommands){
-            if (command.equals(leaveCommand)){
-                return true;
-            }
-        }
-        for(String getInfoCommand : getInfoCommands){
-            if (command.equals(getInfoCommand)){
-                return true;
-            }
+    public boolean isMemberMessageCommand(String command) {
+        if (isJoinCommand(command)) return true;
+        if (isLeaveCommand(command)) return true;
+        if (isGetInfoCommand(command)) return true;
+        return false;
+    }
+
+    public boolean isJoinCommand(String command) {
+        for (String joinCommand : joinCommands) {
+            if (command.equals(joinCommand)) return true;
         }
         return false;
     }
 
-    public void join(MessageReceivedEvent event){
+    public boolean isLeaveCommand(String command) {
+        for (String leaveCommand : leaveCommands) {
+            if (command.equals(leaveCommand)) return true;
+        }
+        return false;
+    }
+
+    public boolean isGetInfoCommand(String command) {
+        for (String getInfoCommand : getInfoCommands) {
+            if (command.equals(getInfoCommand)) return true;
+        }
+        return false;
+    }
+
+    public void join(MessageReceivedEvent event) {
         try {
             MemberJoinDTO memberJoinDTO = new MemberJoinDTO();
             memberJoinDTO.setId(event.getAuthor().getId());
             memberJoinDTO.setName(event.getAuthor().getName());
+
             OffsetDateTime userCreatedTime = event.getAuthor().getTimeCreated();
             memberJoinDTO.setDiscordJoinDate(Date.from(userCreatedTime.toInstant()));
+
             memberService.join(memberJoinDTO);
+
             sendSuccessMessage("가입 성공!",
                     memberJoinDTO.getName() + "님, 스우 가입을 환영합니다!",
                     event);
@@ -65,24 +84,60 @@ public class MemberMessageWork {
         }
     }
 
-    public void leave(MessageReceivedEvent event){
-        try {
-            memberService.leave(event.getAuthor().getId());
-            sendSuccessMessage("탈퇴 완료",
-                    "다음에 다시만나요.",
-                    event);
-        } catch (MemberNoExistsException e) {
+    public void leave(MessageReceivedEvent event) {
+
+        if (!memberService.isMemberExists(event.getAuthor().getId())) {
             sendErrorMessage("탈퇴 실패",
                     event.getAuthor().getName() + "님은 애초에 가입되어 있지 않았습니다!",
                     event);
-        } catch (Exception e) {
-            sendErrorMessage("원인을 모르는 탈퇴 실패",
-                    "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
-                    event);
+            return;
         }
+
+        String userID = event.getAuthor().getId();
+
+        event.getChannel().sendMessageEmbeds(new EmbedBuilder()
+                .setTitle(":face_with_raised_eyebrow: **ㄹㅇ?**")
+                .setColor(NoticePallet.warningYellow)
+                .setDescription("정말 탈퇴하시겠어요? 탈퇴하시면 정보가 모두 날라가고, 다시는 복구할 수 없어요.")
+                .build()).queue(message -> {
+
+            message.addReaction(Emoji.fromUnicode("U+1F198")).queue();
+            message.addReaction(Emoji.fromUnicode("U+1F494")).queue();
+
+
+            event.getJDA().addEventListener(new ListenerAdapter() {
+                @Override
+                public void onMessageReactionAdd(MessageReactionAddEvent addEvent) {
+                    if (!userID.equals(addEvent.getUserId()) || !message.getId().equals(addEvent.getMessageId())) return;
+
+                    if (addEvent.getEmoji().getAsReactionCode().split(":")[0].equals(Emoji.fromUnicode("U+1F494").getAsReactionCode())) {
+                        //삭제
+                        try {
+                            memberService.leave(event.getAuthor().getId());
+                            editSuccessMessage("탈퇴 완료",
+                                    "다음에 다시만나요.",
+                                    message);
+                        } catch (Exception e) {
+                            editErrorMessage("원인을 모르는 탈퇴 실패",
+                                    "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
+                                    message);
+                        }
+
+                    } else {
+                        //삭제 취소
+                        editErrorMessage("탈퇴 취소됨",
+                                "사용자가 취소를 취소했습니다(?)",
+                                message);
+                    }
+                    message.clearReactions().queue();
+                }
+            });
+        });
+
+
     }
 
-    public void getInfo(MessageReceivedEvent event){
+    public void getInfo(MessageReceivedEvent event) {
         try {
             MemberInfoDTO memberInfoDTO = memberService.getInfo(event.getAuthor().getId());
             sendSuccessMessage("내정보 조회 성공",
@@ -103,19 +158,53 @@ public class MemberMessageWork {
         }
     }
 
-    private void sendSuccessMessage(String title, String description, MessageReceivedEvent event){
+    private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
-                .setTitle(":smile: **"+title+"**")
+                .setTitle(":smile: **" + title + "**")
                 .setColor(NoticePallet.goodGreen)
                 .setDescription(description)
                 .build()).queue();
     }
 
-    private void sendErrorMessage(String title, String description, MessageReceivedEvent event){
+    private String sendWarningMessage(String title, String description, MessageReceivedEvent event) {
+        final String[] messageID = new String[1];
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
-                .setTitle(":frowning: **"+title+"**")
+                .setTitle(":face_with_raised_eyebrow: **" + title + "**")
+                .setColor(NoticePallet.warningYellow)
+                .setDescription(description)
+                .build()).queue(message -> messageID[0] = message.getId());
+        return messageID[0];
+    }
+
+    private void sendErrorMessage(String title, String description, MessageReceivedEvent event) {
+        event.getChannel().sendMessageEmbeds(new EmbedBuilder()
+                .setTitle(":frowning: **" + title + "**")
                 .setColor(NoticePallet.badRed)
                 .setDescription(description)
+                .build()).queue();
+    }
+
+    private void editSuccessMessage(String title, String description, Message message) {
+        message.editMessageEmbeds(new EmbedBuilder()
+                .setTitle(":smile: **" + title + "**")
+                .setDescription(description)
+                .setColor(NoticePallet.goodGreen)
+                .build()).queue();
+    }
+
+    private void editErrorMessage(String title, String description, Message message) {
+        message.editMessageEmbeds(new EmbedBuilder()
+                .setTitle(":frowning: **" + title + "**")
+                .setDescription(description)
+                .setColor(NoticePallet.badRed)
+                .build()).queue();
+    }
+
+    private void editWarningMessage(String title, String description, MessageChannel channel, String messageID) {
+        channel.editMessageEmbedsById(messageID, new EmbedBuilder()
+                .setTitle(":face_with_raised_eyebrow: **" + title + "**")
+                .setDescription(description)
+                .setColor(NoticePallet.warningYellow)
                 .build()).queue();
     }
 

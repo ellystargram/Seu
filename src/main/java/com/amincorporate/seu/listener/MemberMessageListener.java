@@ -51,44 +51,29 @@ public class MemberMessageListener extends ListenerAdapter {
         // 커맨드 구분
         String command = messageWords[0]; // 타이핑 편하게 함
         // 가입(스우(야) 가입)
-        switch (command) {
-            case "가입" -> {
-                memberMessageWork.join(event);
+        if (memberMessageWork.isJoinCommand(command)){
+            memberMessageWork.join(event);
+        }
+        else if(memberMessageWork.isLeaveCommand(command)){
+            memberMessageWork.leave(event);
+        }
+        else if(memberMessageWork.isGetInfoCommand(command)){
+            memberMessageWork.getInfo(event);
+        }
+        else{
+            //todo late move somewhere else
+            boolean isAnotherCommand = true;
+            if (memberMessageWork.isMemberMessageCommand(command)) {
+                isAnotherCommand = false;
+            } else if (walletMessageWork.isWalletMessageCommand(command)) {
+                isAnotherCommand = false;
             }
-            // 탈퇴(스우(야) 탈퇴)
-            case "탈퇴" -> {
-                memberMessageWork.leave(event);
-            }
-            // 내정보(스우(야) 내정보)
-            case "내정보" -> {
-                memberMessageWork.getInfo(event);
-            }
-            default -> {
-                boolean isAnotherCommand = true;
-                if (memberMessageWork.isMemberMessageCommand(command)) {
-                    isAnotherCommand = false;
-                } else if (walletMessageWork.isWalletMessageCommand(command)) {
-                    isAnotherCommand = false;
-                }
-
-                //todo late 나중에 이 부분 다른곳으로 옮기기
-                if (isAnotherCommand) {
-                    sendErrorMessage("그게 뭐누",
-                            "뭔지 모르는 커맨드임"
-                            , event);
-                }
+            if (isAnotherCommand) {
+                sendErrorMessage("그게 뭐누",
+                        "뭔지 모르는 커맨드임"
+                        , event);
             }
         }
-
-
-        // 메세지 보내는법
-//        event.getChannel().sendMessage("보낼 메세지").queue();
-
-        //임베드 보내는법
-//        event.getChannel().sendMessageEmbeds(new EmbedBuilder()
-//                .setTitle("제목")
-//                .setDescription("설명")
-//                .build()).queue();
 
     }
 

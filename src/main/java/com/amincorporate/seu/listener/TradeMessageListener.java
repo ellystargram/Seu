@@ -4,6 +4,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CryptocurrencyMessageListener extends ListenerAdapter {
+public class TradeMessageListener extends ListenerAdapter {
 
 }

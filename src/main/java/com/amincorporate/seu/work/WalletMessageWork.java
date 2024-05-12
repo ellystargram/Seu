@@ -1,5 +1,6 @@
 package com.amincorporate.seu.work;
 
+import com.amincorporate.seu.dto.ExchangeInfoDTO;
 import com.amincorporate.seu.dto.WalletCreateDTO;
 import com.amincorporate.seu.dto.WalletInfoDTO;
 import com.amincorporate.seu.entity.wallet.WalletType;
@@ -8,6 +9,7 @@ import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
 import com.amincorporate.seu.service.MemberServiceImpl;
+import com.amincorporate.seu.service.WalletService;
 import com.amincorporate.seu.service.WalletServiceImpl;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -29,35 +31,43 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WalletMessageWork {
 
-    private final WalletServiceImpl walletService;
-    private final MemberServiceImpl memberService;
+    private final WalletService walletService;
+    private final MemberService memberService;
 
-    private static String[] createWalletCommands = {"createWallet", "지갑생성"};
+    private static String[] createWalletCommands = {"createWallet", "지갑생성", "지갑만들기"};
     private static String[] deleteWalletCommands = {"deleteWallet", "지갑삭제"};
-    private static String[] walletInfoCommands = {"walletInfo", "지갑정보", "지갑조회"};
+    private static String[] walletInfoCommands = {"walletInfo", "지갑정보", "지갑조회", "내지갑"};
 
     public boolean isWalletMessageCommand(String command) {
+        if (isCreateWalletCommand(command)) return true;
+        if (isDeleteWalletCommand(command)) return true;
+        if (isWalletInfoCommand(command)) return true;
+        return false;
+    }
+
+    public boolean isCreateWalletCommand(String command) {
         for (String createWalletCommand : createWalletCommands) {
-            if (command.equals(createWalletCommand)) {
-                return true;
-            }
+            if (command.equals(createWalletCommand)) return true;
         }
+        return false;
+    }
+
+    public boolean isDeleteWalletCommand(String command) {
         for (String deleteWalletCommand : deleteWalletCommands) {
-            if (command.equals(deleteWalletCommand)) {
-                return true;
-            }
+            if (command.equals(deleteWalletCommand)) return true;
         }
+        return false;
+    }
+
+    public boolean isWalletInfoCommand(String command) {
         for (String walletInfoCommand : walletInfoCommands) {
-            if (command.equals(walletInfoCommand)) {
-                return true;
-            }
+            if (command.equals(walletInfoCommand)) return true;
         }
         return false;
     }
 
     public void createWallet(MessageReceivedEvent event, JDA jda) {
-        //here
-        if (!memberService.isMemberExists(event.getAuthor().getId())){
+        if (!memberService.isMemberExists(event.getAuthor().getId())) {
             sendErrorMessage("지갑 생성 실패",
                     event.getAuthor().getName() + "님은 가입되지 않았습니다! 먼저 \"스우 가입\" 명령어를 통해 가입해 주세요.",
                     event);
@@ -123,6 +133,7 @@ public class WalletMessageWork {
         String[] userInput = event.getMessage().getContentDisplay().strip().split(" ");
         String accountListString = "";
         userInput = Arrays.copyOfRange(userInput, 1, userInput.length);
+
         if (userInput.length == 1) { // 지갑정보만 입력함
             String copperIcon = event.getGuild().getEmojisByName("copper", true).getFirst().getFormatted();
             String bauxiteIcon = event.getGuild().getEmojisByName("bauxite", true).getFirst().getFormatted();
@@ -160,14 +171,32 @@ public class WalletMessageWork {
         } else {
             userInput = Arrays.copyOfRange(userInput, 1, userInput.length);
         }
-        //todo late
-        List<WalletInfoDTO> walletInfoDTOS = walletService.getInfo(event.getAuthor().getId());
-        for (WalletInfoDTO compWallet : walletInfoDTOS) {
-            if (compWallet.getId().equals(userInput[0])) {
-                //ureca
+        try {
+            List<ExchangeInfoDTO> exchangeInfoDTOS = walletService.getInfoDetail(event.getAuthor().getId(), userInput[0]);
+            String walletDetail = userInput[0] + " 지갑의 목록들\n";
+            for (ExchangeInfoDTO exchangeInfoDTO : exchangeInfoDTOS) {
+                String coinName = exchangeInfoDTO.getName();
+                String coinCode;
+                Double coinQT = exchangeInfoDTO.getQuantity();
+                String coinSymbol = exchangeInfoDTO.getSymbol();
+                Double coinPrice = exchangeInfoDTO.getPrice();
 
+                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + String.valueOf(coinQT) + " " + coinSymbol + "**\n> **BUY PRICE: " + String.valueOf(coinPrice) + " $**\n\n";
             }
+            sendSuccessMessage(userInput[0] + "지갑의 내용물들",
+                    walletDetail,
+                    event);
+
+        } catch (WalletNoExistsException e) {
+            sendErrorMessage("지갑 상세조회 실패",
+                    userInput[0] + "이란 주소를 가진 지갑은 존재하지 않거나, " + event.getAuthor().getName() + "님이 소유하고 있지 않습니다.",
+                    event);
+        } catch (Exception e) {
+            sendErrorMessage("원인을 모르는 지갑 상세조회 실패",
+                    "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
+                    event);
         }
+
     }
 
     private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {
@@ -178,12 +207,14 @@ public class WalletMessageWork {
                 .build()).queue();
     }
 
-    private void sendErrorMessage(String title, String description, MessageReceivedEvent event) {
+    private String sendErrorMessage(String title, String description, MessageReceivedEvent event) {
+        final String[] messageID = new String[1];
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
                 .setTitle(":frowning: **" + title + "**")
                 .setColor(NoticePallet.badRed)
                 .setDescription(description)
-                .build()).queue();
+                .build()).queue(message -> messageID[0] = message.getId());
+        return messageID[0];
     }
 
     private void sendWarningMessage(String title, String description, MessageReceivedEvent event) {

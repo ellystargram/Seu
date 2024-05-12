@@ -43,13 +43,12 @@ public class WalletMessageListener extends ListenerAdapter {
 
         //커맨드 구분
         String command = messageWords[0]; // 타이핑 편하게 함
-        switch (command) {
-            case "지갑생성" -> {
-                walletMessageWork.createWallet(event, jda);
-            }
-            case "지갑정보" -> {
-                walletMessageWork.walletInfo(event);
-            }
+
+        if (walletMessageWork.isCreateWalletCommand(command)){//지갑생성류 커맨드면
+            walletMessageWork.createWallet(event, jda);
+        }
+        else if(walletMessageWork.isWalletInfoCommand(command)){//지갑정보류 커맨드면
+            walletMessageWork.walletInfo(event);
         }
 
     }
