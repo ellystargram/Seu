@@ -8,9 +8,7 @@ import java.util.Date;
 
 @Entity
 @Getter
-@Builder
 @Table(name = "Exchange")
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ExchangeEntity {
 
@@ -26,12 +24,18 @@ public class ExchangeEntity {
     @JoinColumn(name = "COIN_ID")
     private CoinEntity coinEntity;
 
-    private String tradeType;
-
     private Double quantity;
 
     private Double price;
 
     private Date tradeDate;
 
+    @Builder
+    public ExchangeEntity(WalletEntity walletEntity, CoinEntity coinEntity, String tradeType, Double quantity, Double price, Date tradeDate) {
+        this.walletEntity = walletEntity;
+        this.coinEntity = coinEntity;
+        this.quantity = quantity;
+        this.price = price;
+        this.tradeDate = tradeDate;
+    }
 }

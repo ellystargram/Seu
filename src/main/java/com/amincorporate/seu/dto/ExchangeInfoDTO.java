@@ -15,4 +15,6 @@ public class ExchangeInfoDTO {
 
     private Double price;
 
+    private int maxDecimal;
+
 }

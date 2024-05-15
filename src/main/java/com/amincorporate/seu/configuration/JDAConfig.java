@@ -35,7 +35,7 @@ public class JDAConfig {
 
         jda.addEventListener(new MemberMessageListener(memberMessageWork, walletMessageWork, tradeMessageWork));
         jda.addEventListener(new WalletMessageListener(walletMessageWork, jda));
-        jda.addEventListener(new TradeMessageListener(tradeMessageWork));
+        jda.addEventListener(new TradeMessageListener(tradeMessageWork, jda));
 
         return jda;
     }

@@ -116,7 +116,7 @@ public class WalletServiceImpl implements WalletService {
             }
         }
 
-        List<ExchangeEntity> exchangeEntities = exchangeRepository.findLatestTradesByCoin();
+        List<ExchangeEntity> exchangeEntities = exchangeRepository.findLatestTradesByCoin(walletId);
 
         List<ExchangeInfoDTO> exchangeInfoDTOS = new ArrayList<>();
 
@@ -126,10 +126,15 @@ public class WalletServiceImpl implements WalletService {
             exchangeInfoDTO.setSymbol(exchangeEntity.getCoinEntity().getSymbol());
             exchangeInfoDTO.setPrice(exchangeEntity.getPrice() * rate);
             exchangeInfoDTO.setQuantity(exchangeEntity.getQuantity());
+            exchangeInfoDTO.setMaxDecimal(exchangeEntity.getCoinEntity().getMaxDecimal());
             exchangeInfoDTOS.add(exchangeInfoDTO);
         }
 
         return exchangeInfoDTOS;
     }
 
+    @Override
+    public Boolean isWalletExists(String memberId, String walletId) {
+        return walletRepository.findByMemberEntity_IdAndId(memberId, walletId).isEmpty();
+    }
 }

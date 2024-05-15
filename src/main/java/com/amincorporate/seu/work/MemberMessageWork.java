@@ -73,7 +73,7 @@ public class MemberMessageWork {
                     event);
         } catch (MemberExistsException e) {
             sendErrorMessage("가입 실패",
-                    event.getAuthor().getName() + "님은 이미 가입되어 있습니다.",
+                    event.getAuthor().getName() + "님은 이미 가입되어 있어요!",
                     event);
         } catch (Exception e) {
             sendErrorMessage("원인을 모르는 가입 실패",
@@ -86,7 +86,7 @@ public class MemberMessageWork {
 
         if (!memberService.isMemberExists(event.getAuthor().getId())) {
             sendErrorMessage("탈퇴 실패",
-                    event.getAuthor().getName() + "님은 애초에 가입되어 있지 않았습니다!",
+                    event.getAuthor().getName() + "님은 Seu에 가입되어 있지 않아요.\n\n\"스우 가입\" 으로 가입 해주세요.",
                     event);
             return;
         }
@@ -146,8 +146,7 @@ public class MemberMessageWork {
 
         } catch (MemberNoExistsException e) {
             sendErrorMessage("내정보 조회 실패",
-                    event.getAuthor().getName() + "님은 스우에 가입되어 있지 않아 정보를 조회할 수 없습니다.\n\n" +
-                            "가입 후 다시 시도해주세요. (가입하기: \"스우야 가입\")",
+                    event.getAuthor().getName() + "님은 Seu에 가입되어 있지 않아요.\n\n\"스우 가입\" 으로 가입 해주세요.",
                     event);
         } catch (Exception e) {
             sendErrorMessage("원인을 모르는 내정보 조회 실패",

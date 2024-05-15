@@ -12,4 +12,6 @@ public interface TradeService {
 
     List<CoinBuyableDTO> getBuyable(String walletId, String inCoinId, Double quantity);
 
+    CoinTradeDTO trade(String walletId, String inCoinId, Double quantity, String outCoinId);
+
 }

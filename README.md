@@ -2,12 +2,12 @@
 the Discord Bot of Tomorrow
 
 ## Features
-Simulate Coin Market on Any Discord Server
+* Simulate Coin Market on Any Discord Server
+* You can Tansaction coin with another coin
 
 ## Known Bugs || ERRORS
-* you CAN'T transaction coins YET
+* Market is not updating automatically
 
 ## UPDATE PLAN
-* Transaction
 * Transfer
 * Market Auto Update

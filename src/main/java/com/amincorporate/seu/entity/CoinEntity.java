@@ -24,4 +24,6 @@ public class CoinEntity {
 
     private String symbol;
 
+    private int maxDecimal;
+
 }

@@ -2,6 +2,7 @@ package com.amincorporate.seu.listener;
 
 import com.amincorporate.seu.work.TradeMessageWork;
 import lombok.RequiredArgsConstructor;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ public class TradeMessageListener extends ListenerAdapter {
 
     private final TradeMessageWork tradeMessageWork;
     private final Double easterEggUSD = 1371.10;
+    private final JDA jda;
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -36,7 +38,7 @@ public class TradeMessageListener extends ListenerAdapter {
         if (tradeMessageWork.isCoinMarketSearchCommand(command)){
             tradeMessageWork.coinMarketList(event);
         } else if (tradeMessageWork.isCoinTransactionCommand(command)){
-            tradeMessageWork.transaction(event, messageWords);
+            tradeMessageWork.transaction(event, messageWords, jda);
         } else if (tradeMessageWork.isCoinTransferCommand(command)) {
 
         }

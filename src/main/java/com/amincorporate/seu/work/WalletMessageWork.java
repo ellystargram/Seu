@@ -73,6 +73,12 @@ public class WalletMessageWork {
                     event);
             return;
         }
+        if (!event.isFromGuild()){
+            sendErrorMessage("지갑 생성 실패",
+                    "DM 말고 채널에서 사용해주세요.",
+                    event);
+            return;
+        }
 
         RichCustomEmoji copperIconRaw = event.getGuild().getEmojisByName("copper", true).getFirst();
         RichCustomEmoji bauxiteIconRaw = event.getGuild().getEmojisByName("bauxite", true).getFirst();
@@ -132,7 +138,9 @@ public class WalletMessageWork {
     public void walletInfo(MessageReceivedEvent event) {
         String[] userInput = event.getMessage().getContentDisplay().strip().split(" ");
         String accountListString = "";
-        userInput = Arrays.copyOfRange(userInput, 1, userInput.length);
+        if (event.isFromGuild()) {
+            userInput = Arrays.copyOfRange(userInput, 1, userInput.length);
+        }
 
         if (userInput.length == 1) { // 지갑정보만 입력함
             String copperIcon = event.getGuild().getEmojisByName("copper", true).getFirst().getFormatted();
@@ -156,11 +164,11 @@ public class WalletMessageWork {
                         event);
             } catch (MemberNoExistsException e) {
                 sendErrorMessage("지갑 조회 실패",
-                        event.getAuthor().getName() + "님은 가입되어 있지 않습니다. \"스우 가입\" 명령어를 통해 가입 먼저 해주세요.",
+                        event.getAuthor().getName() + "님은 Seu에 가입되어 있지 않아요.\n\n\"스우 가입\" 으로 가입 해주세요.",
                         event);
             } catch (WalletNoExistsException e) {
                 sendErrorMessage("지갑 조회 실패",
-                        event.getAuthor().getName() + "님은 지갑을 가지고 계시지 않습니다. \"스우 지갑생성\" 명령어를 통해 지갑을 먼저 만들어주세요.",
+                        event.getAuthor().getName() + "님은 지갑이 존재하지 않아요.\n\n\"스우 지갑생성\" 으로 지갑을 만들어주세요.",
                         event);
             } catch (Exception e) {
                 sendErrorMessage("원인을 모르는 지갑 조회 실패",
@@ -173,15 +181,14 @@ public class WalletMessageWork {
         }
         try {
             List<ExchangeInfoDTO> exchangeInfoDTOS = walletService.getInfoDetail(event.getAuthor().getId(), userInput[0]);
-            String walletDetail = userInput[0] + " 지갑의 목록들\n";
+            String walletDetail = "";
             for (ExchangeInfoDTO exchangeInfoDTO : exchangeInfoDTOS) {
                 String coinName = exchangeInfoDTO.getName();
-                String coinCode;
                 Double coinQT = exchangeInfoDTO.getQuantity();
                 String coinSymbol = exchangeInfoDTO.getSymbol();
                 Double coinPrice = exchangeInfoDTO.getPrice();
 
-                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + String.valueOf(coinQT) + " " + coinSymbol + "**\n> **BUY PRICE: " + String.valueOf(coinPrice) + " $**\n\n";
+                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + decimalCutter(coinQT, exchangeInfoDTO.getMaxDecimal()) + " " + coinSymbol + "**\n> **BUY PRICE: " + decimalCutter(coinPrice,2) + " $**\n\n";
             }
             sendSuccessMessage(userInput[0] + "지갑의 내용물들",
                     walletDetail,
@@ -197,6 +204,13 @@ public class WalletMessageWork {
                     event);
         }
 
+    }
+
+    private String decimalCutter(Double value, int cutDecimal) {
+        String decimal = String.valueOf(value).split("\\.")[1];
+        int decimalLen = decimal.length();
+        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
+        return String.format("%."+decimalLen+"f", value);
     }
 
     private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {

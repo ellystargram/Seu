@@ -15,4 +15,6 @@ public interface WalletService {
 
     List<ExchangeInfoDTO> getInfoDetail(String memberId, String walletId);
 
+    Boolean isWalletExists(String memberId, String walletId);
+
 }

@@ -5,8 +5,6 @@ import com.amincorporate.seu.entity.CoinEntity;
 import com.amincorporate.seu.repository.BuyableCoinRepository;
 import com.amincorporate.seu.repository.CoinRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -18,18 +16,20 @@ public class CoinDataInitializer implements CommandLineRunner {
 
     Random rand = new Random();
 
-    private static final Logger log = LoggerFactory.getLogger(CoinDataInitializer.class);
     private final CoinRepository coinRepository;
     private final BuyableCoinRepository buyableCoinRepository;
 
     @Override
     public void run(String... args) throws Exception {
+
+        buyableCoinRepository.deleteAll();
+
         List<CoinEntity> coinEntities = Arrays.asList(
-                new CoinEntity("BTC", "Bitcoin", 61027.20, "₿"),
-                new CoinEntity("ETH", "Ethereum", 2911.48, "Ξ"),
-                new CoinEntity("SOL", "Solana", 144.56, "◎"),
-                new CoinEntity("ADA", "Cardano", 0.44, "₳"),
-                new CoinEntity("DOGE", "Dogecoin", 0.14, "Ð")
+                new CoinEntity("BTC", "Bitcoin", 61027.20, "₿", 8),
+                new CoinEntity("ETH", "Ethereum", 2911.48, "Ξ", 6),
+                new CoinEntity("SOL", "Solana", 144.56, "◎", 2),
+                new CoinEntity("ADA", "Cardano", 0.44, "₳", 1),
+                new CoinEntity("DOGE", "Dogecoin", 0.14, "Ð", 0)
         );
 
         List<BuyableCoinEntity> buyableCoinEntities = new ArrayList<>();

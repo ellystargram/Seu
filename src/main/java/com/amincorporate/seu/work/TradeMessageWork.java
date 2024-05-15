@@ -1,24 +1,38 @@
 package com.amincorporate.seu.work;
 
 import com.amincorporate.seu.dto.CoinBuyableDTO;
+import com.amincorporate.seu.dto.CoinTradeDTO;
+import com.amincorporate.seu.entity.CoinEntity;
 import com.amincorporate.seu.exception.CoinNoExistsException;
+import com.amincorporate.seu.exception.MemberNoExistsException;
+import com.amincorporate.seu.exception.MoneyNotEnoughException;
+import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
 import com.amincorporate.seu.service.TradeService;
 import com.amincorporate.seu.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class TradeMessageWork {
 
+    private static final Logger log = LoggerFactory.getLogger(TradeMessageWork.class);
     private final MemberService memberService;
     private final WalletService walletService;
     private final TradeService tradeService;
@@ -63,7 +77,7 @@ public class TradeMessageWork {
                 event);
     }
 
-    public void transaction(MessageReceivedEvent event, String[] commands) {
+    public void transaction(MessageReceivedEvent event, String[] commands, JDA jda) {
         // 스우야 거래 살코인 몇개를살지 구매지갑
         //         0   1    2          3
         String buyCoinID = "";
@@ -89,10 +103,18 @@ public class TradeMessageWork {
             return;
         }
 
+        if (walletService.isWalletExists(event.getAuthor().getId(), walletAddress)){
+            sendErrorMessage("거래 실패",
+                    walletAddress + "이란 주소를 가진 지갑은 존재하지 않거나, " + event.getAuthor().getName() + "님이 소유하고 있지 않습니다.",
+                    event);
+            return;
+        }
+
         try {
-            Double needUSD = tradeService.getCoin(buyCoinID).getPrice() * howManyInDouble;
-            List<CoinBuyableDTO> coinBuyableDTOS = tradeService.getBuyable(walletAddress, buyCoinID, howManyInDouble);
-            String listYouCanBuy = buyCoinID + "구매하는 방법\n";
+            CoinEntity coin = tradeService.getCoin(buyCoinID);
+            Double needUSD = coin.getPrice() * Double.valueOf(decimalCeil(howManyInDouble, coin.getMaxDecimal()));
+            List<CoinBuyableDTO> coinBuyableDTOS = tradeService.getBuyable(walletAddress, buyCoinID, Double.valueOf(decimalCeil(howManyInDouble, coin.getMaxDecimal())));
+            String listYouCanBuy = "**" + coin.getName() + " " + decimalCeil(howManyInDouble, coin.getMaxDecimal()) + coin.getSymbol() +"을 이 가격으로 매수 할 수 있어요.**\n\n";
             if (coinBuyableDTOS.isEmpty()) {
                 sendErrorMessage("거래 실패",
                         "지불 가능한 코인이 없습니다.",
@@ -100,12 +122,32 @@ public class TradeMessageWork {
                 return;
             }
 
-            String[] icons = {":one:"};
 
-            for (int i=0; i<coinBuyableDTOS.size();i++){
+            Map<String, RichCustomEmoji> coinIcons = new HashMap<>();
+
+            RichCustomEmoji BTCIcon = event.getGuild().getEmojisByName("BTC", true).getFirst();
+            RichCustomEmoji ETHIcon = event.getGuild().getEmojisByName("ETH", true).getFirst();
+            RichCustomEmoji SOLIcon = event.getGuild().getEmojisByName("SOL", true).getFirst();
+            RichCustomEmoji ADAIcon = event.getGuild().getEmojisByName("ADA", true).getFirst();
+            RichCustomEmoji DOGEIcon = event.getGuild().getEmojisByName("DOGE", true).getFirst();
+
+            // Map 에 Icon 저장
+            coinIcons.put("BTC", BTCIcon);
+            coinIcons.put("ETH", ETHIcon);
+            coinIcons.put("SOL", SOLIcon);
+            coinIcons.put("ADA", ADAIcon);
+            coinIcons.put("DOGE", DOGEIcon);
+
+            for (int i = 0; i < coinBuyableDTOS.size(); i++) {
                 CoinBuyableDTO coinBuyableDTO = coinBuyableDTOS.get(i);
-                listYouCanBuy += "> " + icons[i] + " " + coinBuyableDTO.getCoinEntity().getName() + ": " + (needUSD / coinBuyableDTO.getCoinEntity().getPrice()) + " " + coinBuyableDTO.getCoinEntity().getSymbol() + "\n\n";
+                listYouCanBuy += "> " + coinIcons.get(coinBuyableDTO.getCoinEntity().getId()).getFormatted() + " " + coinBuyableDTO.getCoinEntity().getName() + ": " + decimalCeil(needUSD / coinBuyableDTO.getCoinEntity().getPrice(), coinBuyableDTO.getCoinEntity().getMaxDecimal()) + " **" + coinBuyableDTO.getCoinEntity().getSymbol() + "**\n\n";
             }
+
+            listYouCanBuy += coin.getName() + " 을(를) 사기 위해 사용할 코인을 골라주세요.";
+
+            String finalWalletAddress = walletAddress;
+            String finalBuyCoinID = buyCoinID;
+            Double finalHowManyInDouble = howManyInDouble;
 
             event.getChannel().sendMessageEmbeds(new EmbedBuilder()
                     .setTitle(":face_with_raised_eyebrow: **코인거래**")
@@ -113,8 +155,67 @@ public class TradeMessageWork {
                     .setDescription(listYouCanBuy)
                     .build()).queue(message -> {
 
+                for (int i = 0; i < coinBuyableDTOS.size(); i++) {
+                    CoinBuyableDTO coinBuyableDTO = coinBuyableDTOS.get(i);
+                    message.addReaction(coinIcons.get(coinBuyableDTO.getCoinEntity().getId())).queue();
+                }
+
+                jda.addEventListener(new ListenerAdapter() {
+                    @Override
+                    public void onMessageReactionAdd(MessageReactionAddEvent reactionEvent) {
+
+                        if (!message.getId().equals(reactionEvent.getMessageId()) || !reactionEvent.getUserId().equals(event.getAuthor().getId())) {
+                            return;
+                        }
+
+                        String selectEmoji = reactionEvent.getEmoji().getAsReactionCode().split(":")[0];
+
+                        try {
+
+                            CoinTradeDTO coinTradeDTO = tradeService.trade(finalWalletAddress, finalBuyCoinID, Double.valueOf(decimalCeil(finalHowManyInDouble, coin.getMaxDecimal())), selectEmoji);
+
+                            editSuccessMessage("거래 성공",
+                                    "> " + coinIcons.get(coinTradeDTO.getInCoin().getId()).getFormatted() + " " + coinTradeDTO.getInCoin().getName() + " " + decimalCeil(finalHowManyInDouble, coinTradeDTO.getInCoin().getMaxDecimal()) + " **" + coinTradeDTO.getInCoin().getSymbol() + "**(을)를 \n> " +
+                                            coinIcons.get(coinTradeDTO.getOutCoin().getId()).getFormatted() + " " + coinTradeDTO.getOutCoin().getName() + " " + decimalCeil(needUSD / coinTradeDTO.getOutCoin().getPrice(), coinTradeDTO.getOutCoin().getMaxDecimal()) + " " + coinTradeDTO.getOutCoin().getSymbol() + "로 매수 했어요.",
+                                    message);
+
+                            message.clearReactions().queue();
+
+                        } catch (MoneyNotEnoughException e){
+                            editErrorMessage("거래 실패",
+                                    finalWalletAddress +"지갑에 필요한 코인이 **\"아까까지만 해도\" 존재했지만**, 지금은 없어서 거래를 할 수 없네요",
+                                    message);
+                            message.clearReactions().queue();
+                        } catch (MemberNoExistsException e) {
+                            editErrorMessage("거래 실패",
+                                    event.getAuthor().getName() + "님은 Seu에 가입되어 있지 않아요.\n\n\"스우 가입\" 으로 가입 해주세요.",
+                                    message);
+                            message.clearReactions().queue();
+                        } catch (WalletNoExistsException e) {
+                            editErrorMessage("거래 실패",
+                                    finalWalletAddress + " 이라는 지갑이 존재하지 않아요.\n\n\"스우 지갑생성\" 으로 지갑을 만들어주세요.",
+                                    message);
+                            message.clearReactions().queue();
+                        } catch (Exception e) {
+                            editErrorMessage("원인을 모르는 거래 실패",
+                                    "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
+                                    message);
+                            message.clearReactions().queue();
+                        }
+
+                    }
+                });
+
             });
 
+        } catch (MemberNoExistsException e) {
+            sendErrorMessage("거래 실패",
+                    event.getAuthor().getName() + "님은 Seu에 가입되어 있지 않아요.\n\n\"스우 가입\" 으로 가입 해주세요.",
+                    event);
+        } catch (WalletNoExistsException e) {
+            sendErrorMessage("거래 실패",
+                    event.getAuthor().getName() + "님은 지갑이 존재하지 않아요.\n\n\"스우 지갑 생성\" 으로 지갑을 만들어주세요.",
+                    event);
         } catch (CoinNoExistsException e) {
             // 존재하지 않는 코인
             sendErrorMessage("거래 실패",
@@ -127,6 +228,28 @@ public class TradeMessageWork {
         }
 
     }
+
+    private String decimalRounder(Double value, int cutDecimal) {
+        String decimal = String.valueOf(value).split("\\.")[1];
+        int decimalLen = decimal.length();
+        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
+        return String.format("%."+decimalLen+"f", value);
+    }
+
+    private String decimalCeil(Double value, int cutDecimal){
+        String decimal = String.valueOf(value).split("\\.")[1];
+        int decimalLen = decimal.length();
+        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
+        return String.format("%."+decimalLen+"f", Math.ceil(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+    }
+
+    private String decimalFloor(Double value, int cutDecimal){
+        String decimal = String.valueOf(value).split("\\.")[1];
+        int decimalLen = decimal.length();
+        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
+        return String.format("%."+decimalLen+"f", Math.floor(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+    }
+
 
     private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {
         event.getChannel().sendMessageEmbeds(new EmbedBuilder()
