@@ -8,13 +8,13 @@ import com.amincorporate.seu.exception.MemberNoExistsException;
 import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.pallet.NoticePallet;
 import com.amincorporate.seu.service.MemberService;
-import com.amincorporate.seu.service.MemberServiceImpl;
 import com.amincorporate.seu.service.WalletService;
-import com.amincorporate.seu.service.WalletServiceImpl;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Icon;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -22,21 +22,20 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class WalletMessageWork {
 
-    private final WalletService walletService;
-    private final MemberService memberService;
-
     private static String[] createWalletCommands = {"createWallet", "지갑생성", "지갑만들기"};
     private static String[] deleteWalletCommands = {"deleteWallet", "지갑삭제"};
     private static String[] walletInfoCommands = {"walletInfo", "지갑정보", "지갑조회", "내지갑"};
+    private final WalletService walletService;
+    private final MemberService memberService;
 
     public boolean isWalletMessageCommand(String command) {
         if (isCreateWalletCommand(command)) return true;
@@ -73,7 +72,7 @@ public class WalletMessageWork {
                     event);
             return;
         }
-        if (!event.isFromGuild()){
+        if (!event.isFromGuild()) {
             sendErrorMessage("지갑 생성 실패",
                     "DM 말고 채널에서 사용해주세요.",
                     event);
@@ -125,9 +124,10 @@ public class WalletMessageWork {
                         message.clearReactions().queue();
 
                     } catch (Exception e) {
-                        sendErrorMessage("원인을 모르는 지갑 생성 실패",
+                        editErrorMessage("원인을 모르는 지갑 생성 실패",
                                 "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
-                                event);
+                                message);
+                        message.clearReactions().queue();
                     }
                 }
             });
@@ -188,7 +188,7 @@ public class WalletMessageWork {
                 String coinSymbol = exchangeInfoDTO.getSymbol();
                 Double coinPrice = exchangeInfoDTO.getPrice();
 
-                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + decimalCutter(coinQT, exchangeInfoDTO.getMaxDecimal()) + " " + coinSymbol + "**\n> **BUY PRICE: " + decimalCutter(coinPrice,2) + " $**\n\n";
+                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + decimalCutter(coinQT, exchangeInfoDTO.getMaxDecimal()) + " " + coinSymbol + "**\n> **BUY PRICE: " + decimalCutter(coinPrice, 2) + " $**\n\n";
             }
             sendSuccessMessage(userInput[0] + "지갑의 내용물들",
                     walletDetail,
@@ -209,8 +209,8 @@ public class WalletMessageWork {
     private String decimalCutter(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", value);
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", value);
     }
 
     private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {
@@ -260,4 +260,5 @@ public class WalletMessageWork {
                 .setColor(NoticePallet.warningYellow)
                 .build()).queue();
     }
+
 }
