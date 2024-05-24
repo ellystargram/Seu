@@ -128,6 +128,7 @@ public class WalletMessageWork {
                         sendErrorMessage("원인을 모르는 지갑 생성 실패",
                                 "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
                                 event);
+                        e.printStackTrace();
                     }
                 }
             });
@@ -174,6 +175,7 @@ public class WalletMessageWork {
                 sendErrorMessage("원인을 모르는 지갑 조회 실패",
                         "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
                         event);
+                e.printStackTrace();
             }
             return;
         } else {
@@ -202,6 +204,7 @@ public class WalletMessageWork {
             sendErrorMessage("원인을 모르는 지갑 상세조회 실패",
                     "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
                     event);
+            e.printStackTrace();
         }
 
     }

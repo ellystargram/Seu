@@ -8,7 +8,6 @@ import com.amincorporate.seu.exception.MemberNoExistsException;
 import com.amincorporate.seu.exception.MoneyNotEnoughException;
 import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.pallet.NoticePallet;
-import com.amincorporate.seu.service.MemberService;
 import com.amincorporate.seu.service.TradeService;
 import com.amincorporate.seu.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +89,12 @@ public class TradeMessageWork {
             howManyInString = commands[2];
             howManyInDouble = Double.valueOf(howManyInString);
             walletAddress = commands[3];
-
+            if (howManyInDouble <= 0) {
+                sendErrorMessage("거래 실패",
+                        "잘못된 거래량입니다.\n" + howManyInDouble + "\n" + howManyInString,
+                        event);
+                return;
+            }
         } catch (IndexOutOfBoundsException e) {
             sendErrorMessage("거래 실패",
                     "입력법 \"스우야 거래 (사고싶은 코인 ID) 거래량 거래지갑주소\"",
@@ -100,10 +104,11 @@ public class TradeMessageWork {
             sendErrorMessage("원인을 모르는 거래 실패",
                     "다음의 메시지만이 있어요\n" + e.getMessage(),
                     event);
+            e.printStackTrace();
             return;
         }
 
-        if (walletService.isWalletExists(event.getAuthor().getId(), walletAddress)){
+        if (walletService.isWalletExists(event.getAuthor().getId(), walletAddress)) {
             sendErrorMessage("거래 실패",
                     walletAddress + "이란 주소를 가진 지갑은 존재하지 않거나, " + event.getAuthor().getName() + "님이 소유하고 있지 않습니다.",
                     event);
@@ -114,7 +119,7 @@ public class TradeMessageWork {
             CoinEntity coin = tradeService.getCoin(buyCoinID);
             Double needUSD = coin.getPrice() * Double.valueOf(decimalCeil(howManyInDouble, coin.getMaxDecimal()));
             List<CoinBuyableDTO> coinBuyableDTOS = tradeService.getBuyable(walletAddress, buyCoinID, Double.valueOf(decimalCeil(howManyInDouble, coin.getMaxDecimal())));
-            String listYouCanBuy = "**" + coin.getName() + " " + decimalCeil(howManyInDouble, coin.getMaxDecimal()) + coin.getSymbol() +"을 이 가격으로 매수 할 수 있어요.**\n\n";
+            String listYouCanBuy = "**" + coin.getName() + " " + decimalCeil(howManyInDouble, coin.getMaxDecimal()) + coin.getSymbol() + "을 이 가격으로 매수 할 수 있어요.**\n\n";
             if (coinBuyableDTOS.isEmpty()) {
                 sendErrorMessage("거래 실패",
                         "지불 가능한 코인이 없습니다.",
@@ -181,9 +186,9 @@ public class TradeMessageWork {
 
                             message.clearReactions().queue();
 
-                        } catch (MoneyNotEnoughException e){
+                        } catch (MoneyNotEnoughException e) {
                             editErrorMessage("거래 실패",
-                                    finalWalletAddress +"지갑에 필요한 코인이 **\"아까까지만 해도\" 존재했지만**, 지금은 없어서 거래를 할 수 없네요",
+                                    finalWalletAddress + "지갑에 필요한 코인이 **\"아까까지만 해도\" 존재했지만**, 지금은 없어서 거래를 할 수 없네요",
                                     message);
                             message.clearReactions().queue();
                         } catch (MemberNoExistsException e) {
@@ -200,6 +205,7 @@ public class TradeMessageWork {
                             editErrorMessage("원인을 모르는 거래 실패",
                                     "원인을 모르는 문제가 다음의 쪽지만 남겨놓고 갔습니다.\n" + e.getMessage(),
                                     message);
+                            e.printStackTrace();
                             message.clearReactions().queue();
                         }
 
@@ -221,10 +227,15 @@ public class TradeMessageWork {
             sendErrorMessage("거래 실패",
                     "그런 코인은 세상에 존재하지 않아요" + event.getAuthor().getName() + "어린이\n",
                     event);
+        } catch (MoneyNotEnoughException e) {
+            sendErrorMessage("거래 실패",
+                    "지불 가능한 코인이 없습니다.",
+                    event);
         } catch (Exception e) {
             sendErrorMessage("원인을 모르는 거래 실패",
                     "다음의 메시지만이 있어요\n" + e.getMessage(),
                     event);
+            e.printStackTrace();
         }
 
     }
@@ -232,22 +243,22 @@ public class TradeMessageWork {
     private String decimalRounder(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", value);
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", value);
     }
 
-    private String decimalCeil(Double value, int cutDecimal){
+    private String decimalCeil(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", Math.ceil(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", Math.ceil(value * Math.pow(10, cutDecimal)) / Math.pow(10, cutDecimal));
     }
 
-    private String decimalFloor(Double value, int cutDecimal){
+    private String decimalFloor(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", Math.floor(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", Math.floor(value * Math.pow(10, cutDecimal)) / Math.pow(10, cutDecimal));
     }
 
 

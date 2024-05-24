@@ -148,18 +148,18 @@ public class TradeServiceImpl implements TradeService {
         return String.format("%." + decimalLen + "f", value);
     }
 
-    private String decimalCeil(Double value, int cutDecimal){
+    private String decimalCeil(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", Math.ceil(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", Math.ceil(value * Math.pow(10, cutDecimal)) / Math.pow(10, cutDecimal));
     }
 
-    private String decimalFloor(Double value, int cutDecimal){
+    private String decimalFloor(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", Math.floor(value*Math.pow(10,cutDecimal))/Math.pow(10,cutDecimal));
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", Math.floor(value * Math.pow(10, cutDecimal)) / Math.pow(10, cutDecimal));
     }
 
 }
