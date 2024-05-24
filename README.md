@@ -24,7 +24,6 @@
 <img src="https://img.shields.io/badge/Bitcoin-F7931A?style=for-the-badge&logo=Bitcoin&logoColor=white">
 <img src="https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white">
 <img src="https://img.shields.io/badge/Dogecoin-C2A633?style=for-the-badge&logo=dogecoin&logoColor=white">
-<br>
 <img src="https://img.shields.io/badge/Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white">
 <img src="https://img.shields.io/badge/Cardano-0133AD?style=for-the-badge&logo=cardano&logoColor=white">
 
@@ -56,17 +55,21 @@
 **계정관리 기능**
 <br>
 <img src="src/main/resources/screenshots/join.png">
+<br>
 <img src="src/main/resources/screenshots/leave.png">
 <br>
 **지갑관리 기능**
 <br>
 <img src="src/main/resources/screenshots/makeWallet.png">
+<br>
 <img src="src/main/resources/screenshots/makeWalletDone.png">
+<br>
 <img src="src/main/resources/screenshots/walletList.png">
 <br>
 **코인거래 기능**
 <br>
 <img src="src/main/resources/screenshots/trade.png">
+<br>
 <img src="src/main/resources/screenshots/tradeDone.png">
 
 ***
