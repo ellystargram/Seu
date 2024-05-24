@@ -62,9 +62,7 @@
 <br>
 <img src="src/main/resources/screenshots/makeWallet.png">
 <img src="src/main/resources/screenshots/makeWalletDone.png">
-<br>
 <img src="src/main/resources/screenshots/walletList.png">
-<img src="src/main/resources/screenshots/walletDetail.png">
 <br>
 **코인거래 기능**
 <br>
