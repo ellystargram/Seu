@@ -136,6 +136,12 @@ public class TradeServiceImpl implements TradeService {
                 .price(outCoin.getPrice())
                 .build());
 
+        inCoin.setDemand(quantity);
+        coinRepository.save(inCoin);
+
+        outCoin.setDemand(needUSD / outCoin.getPrice() * -1);
+        coinRepository.save(outCoin);
+
         exchangeRepository.saveAll(exchangeEntities);
 
         return coinTradeDTO;

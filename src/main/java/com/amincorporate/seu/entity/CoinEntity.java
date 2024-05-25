@@ -26,4 +26,6 @@ public class CoinEntity {
 
     private int maxDecimal;
 
+    private double demand;
+
 }

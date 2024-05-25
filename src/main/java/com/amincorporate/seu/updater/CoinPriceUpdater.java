@@ -29,6 +29,7 @@ public class CoinPriceUpdater {
 
         List<Double> doubles = calculateNewPercentage(coinEntities, memberEntities.size());
         Random random = new Random();
+
         for (CoinEntity coinEntity : coinEntities) {
             coinEntity.setDemand(0);
             double randomChange = random.nextDouble(-0.05, 0.05);

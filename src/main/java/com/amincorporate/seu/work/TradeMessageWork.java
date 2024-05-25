@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -31,8 +32,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TradeMessageWork {
 
-    private static final Logger log = LoggerFactory.getLogger(TradeMessageWork.class);
-    private final MemberService memberService;
     private final WalletService walletService;
     private final TradeService tradeService;
 
@@ -74,6 +73,10 @@ public class TradeMessageWork {
         sendSuccessMessage("공사중이다 새끼야",
                 "나중에 다시 찾아와라",
                 event);
+
+        Channel channel = event.getChannel();
+        String marketResearch = "";
+//        List<CoinEntity> coinEntities =
     }
 
     public void transaction(MessageReceivedEvent event, String[] commands, JDA jda) {

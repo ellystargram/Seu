@@ -3,6 +3,7 @@ package com.amincorporate.seu.configuration;
 import com.amincorporate.seu.listener.MemberMessageListener;
 import com.amincorporate.seu.listener.TradeMessageListener;
 import com.amincorporate.seu.listener.WalletMessageListener;
+import com.amincorporate.seu.repository.CoinRepository;
 import com.amincorporate.seu.work.MemberMessageWork;
 import com.amincorporate.seu.work.WalletMessageWork;
 import com.amincorporate.seu.work.TradeMessageWork;
@@ -22,6 +23,7 @@ public class JDAConfig {
     private final MemberMessageWork memberMessageWork;
     private final WalletMessageWork walletMessageWork;
     private final TradeMessageWork tradeMessageWork;
+    private final CoinRepository coinRepository;
 
     @Value("${discord.bot.token}")
     private String token;
@@ -36,7 +38,7 @@ public class JDAConfig {
         jda.addEventListener(new MemberMessageListener(memberMessageWork, walletMessageWork, tradeMessageWork));
         jda.addEventListener(new WalletMessageListener(walletMessageWork, jda));
         jda.addEventListener(new TradeMessageListener(tradeMessageWork, jda));
-
+        jda.addEventListener(new BotConfigInitializer(coinRepository));
         return jda;
     }
 

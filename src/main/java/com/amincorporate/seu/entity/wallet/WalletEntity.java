@@ -1,7 +1,6 @@
 package com.amincorporate.seu.entity.wallet;
 
 import com.amincorporate.seu.entity.MemberEntity;
-import com.amincorporate.seu.entity.WalletCoinEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +26,6 @@ public class WalletEntity {
     @ManyToOne
     @JoinColumn(name = "MEMBER_ID")
     private MemberEntity memberEntity;
-
-    @OneToMany(mappedBy = "walletEntity")
-    private List<WalletCoinEntity> walletCoinEntities;
 
     @Builder
     public WalletEntity(WalletType walletType, MemberEntity memberEntity, Date createDate) {

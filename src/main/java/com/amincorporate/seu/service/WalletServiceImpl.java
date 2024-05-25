@@ -46,8 +46,6 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepository.save(walletEntity);
 
-        log.info("월렛 개수: " + String.valueOf(walletRepository.findAllByMemberEntity_Id(memberId).size()));
-
         if (walletRepository.findAllByMemberEntity_Id(memberId).size() == 1) {
             CoinEntity coinEntity = coinRepository.findById("BTC").get();
 
