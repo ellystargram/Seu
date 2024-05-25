@@ -1,6 +1,7 @@
 package com.amincorporate.seu.service;
 
 import com.amincorporate.seu.dto.CoinBuyableDTO;
+import com.amincorporate.seu.dto.CoinListDTO;
 import com.amincorporate.seu.dto.CoinTradeDTO;
 import com.amincorporate.seu.entity.BuyableCoinEntity;
 import com.amincorporate.seu.entity.CoinEntity;
@@ -29,6 +30,27 @@ public class TradeServiceImpl implements TradeService {
     @Override
     public CoinEntity getCoin(String coinId) {
         return coinRepository.findById(coinId).orElseThrow(CoinNoExistsException::new);
+    }
+
+    @Override
+    public List<CoinListDTO> getCoinList() {
+
+        List<CoinEntity> coinEntities = coinRepository.findAll();
+
+        List<CoinListDTO> coinListDTOS = new ArrayList<>();
+
+        for (CoinEntity coinEntity : coinEntities) {
+            CoinListDTO coinListDTO = new CoinListDTO();
+            coinListDTO.setId(coinEntity.getId());
+            coinListDTO.setName(coinEntity.getName());
+            coinListDTO.setPrice(coinEntity.getPrice());
+            coinListDTO.setMaxDecimal(coinEntity.getMaxDecimal());
+            coinListDTO.setSymbol(coinEntity.getSymbol());
+            coinListDTO.setDemand(coinEntity.getDemand());
+            coinListDTOS.add(coinListDTO);
+        }
+
+        return coinListDTOS;
     }
 
     @Override

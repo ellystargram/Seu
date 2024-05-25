@@ -1,5 +1,6 @@
 package com.amincorporate.seu.work;
 
+import com.amincorporate.seu.dto.CoinListDTO;
 import com.amincorporate.seu.dto.ExchangeInfoDTO;
 import com.amincorporate.seu.dto.WalletCreateDTO;
 import com.amincorporate.seu.dto.WalletInfoDTO;
@@ -7,10 +8,7 @@ import com.amincorporate.seu.entity.wallet.WalletType;
 import com.amincorporate.seu.exception.MemberNoExistsException;
 import com.amincorporate.seu.exception.WalletNoExistsException;
 import com.amincorporate.seu.pallet.NoticePallet;
-import com.amincorporate.seu.service.MemberService;
-import com.amincorporate.seu.service.MemberServiceImpl;
-import com.amincorporate.seu.service.WalletService;
-import com.amincorporate.seu.service.WalletServiceImpl;
+import com.amincorporate.seu.service.*;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -22,10 +20,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -33,6 +28,7 @@ public class WalletMessageWork {
 
     private final WalletService walletService;
     private final MemberService memberService;
+    private final TradeService tradeService;
 
     private static String[] createWalletCommands = {"createWallet", "지갑생성", "지갑만들기"};
     private static String[] deleteWalletCommands = {"deleteWallet", "지갑삭제"};
@@ -73,7 +69,7 @@ public class WalletMessageWork {
                     event);
             return;
         }
-        if (!event.isFromGuild()){
+        if (!event.isFromGuild()) {
             sendErrorMessage("지갑 생성 실패",
                     "DM 말고 채널에서 사용해주세요.",
                     event);
@@ -184,14 +180,44 @@ public class WalletMessageWork {
         try {
             List<ExchangeInfoDTO> exchangeInfoDTOS = walletService.getInfoDetail(event.getAuthor().getId(), userInput[0]);
             String walletDetail = "";
+
+            RichCustomEmoji BTCIcon = event.getGuild().getEmojisByName("BTC", true).getFirst();
+            RichCustomEmoji ETHIcon = event.getGuild().getEmojisByName("ETH", true).getFirst();
+            RichCustomEmoji SOLIcon = event.getGuild().getEmojisByName("SOL", true).getFirst();
+            RichCustomEmoji ADAIcon = event.getGuild().getEmojisByName("ADA", true).getFirst();
+            RichCustomEmoji DOGEIcon = event.getGuild().getEmojisByName("DOGE", true).getFirst();
+
+            Map<String, RichCustomEmoji> coinIcons = new HashMap<>() {{
+                put("BTC", BTCIcon);
+                put("ETH", ETHIcon);
+                put("SOL", SOLIcon);
+                put("ADA", ADAIcon);
+                put("DOGE", DOGEIcon);
+            }};
+
+            Map<String, String> coins = new HashMap<>() {{
+                put("Bitcoin", "BTC");
+                put("Dogecoin", "DOGE");
+                put("Ethereum", "ETH");
+                put("Solana", "SOL");
+                put("Cardano", "ADA");
+            }};
+
             for (ExchangeInfoDTO exchangeInfoDTO : exchangeInfoDTOS) {
                 String coinName = exchangeInfoDTO.getName();
                 Double coinQT = exchangeInfoDTO.getQuantity();
                 String coinSymbol = exchangeInfoDTO.getSymbol();
                 Double coinPrice = exchangeInfoDTO.getPrice();
+                Double coinCurrentPrice = tradeService.getCoin(coins.get(coinName)).getPrice();
 
-                walletDetail += "> **COIN: " + coinName + "**\n> **AMOUNT: " + decimalCutter(coinQT, exchangeInfoDTO.getMaxDecimal()) + " " + coinSymbol + "**\n> **BUY PRICE: " + decimalCutter(coinPrice,2) + " $**\n\n";
+                walletDetail += "> " + coinIcons.get(coins.get(coinName)).getFormatted() +
+                        " **" + coinName + " (" + coins.get(coinName) + ")**\n> **수량: " +
+                        decimalCutter(coinQT, exchangeInfoDTO.getMaxDecimal()) + " " +
+                        coinSymbol + "**\n> **1.0 단위당 구매가치: " + decimalCutter(coinPrice, 2) +
+                        " $**\n> **   └─1.0 단위당 현재가치─> " + decimalCutter(coinCurrentPrice, 2) +
+                        " $**\n> **수익률: " + decimalCutter(((coinCurrentPrice / coinPrice) - 1) * 100,2) + "%**\n\n";
             }
+
             sendSuccessMessage(userInput[0] + "지갑의 내용물들",
                     walletDetail,
                     event);
@@ -212,8 +238,8 @@ public class WalletMessageWork {
     private String decimalCutter(Double value, int cutDecimal) {
         String decimal = String.valueOf(value).split("\\.")[1];
         int decimalLen = decimal.length();
-        if (decimalLen>cutDecimal) decimalLen=cutDecimal;
-        return String.format("%."+decimalLen+"f", value);
+        if (decimalLen > cutDecimal) decimalLen = cutDecimal;
+        return String.format("%." + decimalLen + "f", value);
     }
 
     private void sendSuccessMessage(String title, String description, MessageReceivedEvent event) {

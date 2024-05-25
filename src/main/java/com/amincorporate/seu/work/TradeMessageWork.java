@@ -1,6 +1,7 @@
 package com.amincorporate.seu.work;
 
 import com.amincorporate.seu.dto.CoinBuyableDTO;
+import com.amincorporate.seu.dto.CoinListDTO;
 import com.amincorporate.seu.dto.CoinTradeDTO;
 import com.amincorporate.seu.entity.CoinEntity;
 import com.amincorporate.seu.exception.CoinNoExistsException;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,14 +71,42 @@ public class TradeMessageWork {
 
     public void coinMarketList(MessageReceivedEvent event) {
         //스우야 거래소
-        //todo late
-        sendSuccessMessage("공사중이다 새끼야",
-                "나중에 다시 찾아와라",
-                event);
 
-        Channel channel = event.getChannel();
-        String marketResearch = "";
-//        List<CoinEntity> coinEntities =
+        try {
+            RichCustomEmoji BTCIcon = event.getGuild().getEmojisByName("BTC", true).getFirst();
+            RichCustomEmoji ETHIcon = event.getGuild().getEmojisByName("ETH", true).getFirst();
+            RichCustomEmoji SOLIcon = event.getGuild().getEmojisByName("SOL", true).getFirst();
+            RichCustomEmoji ADAIcon = event.getGuild().getEmojisByName("ADA", true).getFirst();
+            RichCustomEmoji DOGEIcon = event.getGuild().getEmojisByName("DOGE", true).getFirst();
+
+            Map<String, RichCustomEmoji> coinIcons = new HashMap<>() {{
+                put("BTC", BTCIcon);
+                put("ETH", ETHIcon);
+                put("SOL", SOLIcon);
+                put("ADA", ADAIcon);
+                put("DOGE", DOGEIcon);
+            }};
+
+            String marketResearch = "";
+            List<CoinListDTO> coinListDTOS = tradeService.getCoinList();
+
+            for (CoinListDTO coinListDTO : coinListDTOS) {
+                BigDecimal minimalTradeAmout = new BigDecimal(10);
+                minimalTradeAmout = minimalTradeAmout.pow(coinListDTO.getMaxDecimal());
+                minimalTradeAmout = BigDecimal.ONE.divide(minimalTradeAmout);
+                marketResearch += "> " + coinIcons.get(coinListDTO.getId()).getFormatted() + " **" + coinListDTO.getName() + " (" + coinListDTO.getId() + ")**" + "\n>\t1.0 단위당 USD 가치: " +
+                        coinListDTO.getPrice() + " $\n>\t최소 거래량: " +
+                        minimalTradeAmout.toPlainString() + " " + coinListDTO.getSymbol() + "\n\n";
+            }
+            sendSuccessMessage("현재 시장 상황",
+                    marketResearch,
+                    event);
+        } catch (Exception e) {
+            sendErrorMessage("원인을 모르는 시장 조사 실패",
+                    "다음의 메시지만이 있어요\n" + e.getMessage(),
+                    event);
+            e.printStackTrace();
+        }
     }
 
     public void transaction(MessageReceivedEvent event, String[] commands, JDA jda) {
